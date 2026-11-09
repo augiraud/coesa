@@ -9,7 +9,7 @@ done
 go mod download
 go -C tools mod download
 
-if [ -z "${CI:-}" ]; then
+if [[ -z "${CI:-}" ]]; then
   git config core.hooksPath .githooks
 fi
 

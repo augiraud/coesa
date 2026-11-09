@@ -36,7 +36,7 @@ step "Tests (go test)" tool gotestsum --jsonfile test-report.json -- -race -cove
 step "Vulnerabilities (govulncheck)" tool govulncheck ./...
 step "Release config (goreleaser)" tool goreleaser check --quiet
 
-if [ -n "$failed" ]; then
+if [[ -n "$failed" ]]; then
   echo "Failed:$failed"
   exit 1
 fi
