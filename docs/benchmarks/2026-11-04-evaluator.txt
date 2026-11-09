@@ -1,0 +1,210 @@
+COESA optional evaluator measurements, 2026-11-04
+
+Go 1.27.3-X:nodwarf5; Linux amd64; Intel Core i7-12700H. Source: optional evaluator implementation, recorded during pre-release development, when the package lived at github.com/augiraud/coesa/pkg/coesa (as shown in the raw pkg: lines). "Before" is the implementation without the evaluator. Times and allocation counts are raw benchmark output; retained memory uses full sampling after GC. All construction and warmup are outside the public evaluator throughput measurements.
+
+Package functions before
+
+./baseline.test -test.run '^$' -test.bench '^BenchmarkAt$' -test.benchtime=200ms -test.count=5 -test.cpu=1 -test.benchmem
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkAt/10000         	 1732011	       133.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 1727344	       134.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 1791285	       130.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 1849317	       133.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 1805421	       132.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1658	    141425 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1754	    138583 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1744	    134790 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1766	    132476 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1812	    139084 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     243	    977262 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     241	    991552 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     237	   1000046 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     242	    994241 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     240	    998399 ns/op	       0 B/op	       0 allocs/op
+PASS
+
+Package functions after
+
+./evaluator.test -test.run '^$' -test.bench '^BenchmarkAt$' -test.benchtime=200ms -test.count=5 -test.cpu=1 -test.benchmem
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkAt/10000         	 2040260	       116.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 2086812	       114.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 2072493	       115.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 2090660	       114.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 2087971	       117.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1830	    131892 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1791	    134334 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1780	    135237 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1761	    135464 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1827	    134958 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     237	   1039919 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     238	   1001858 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     238	   1000245 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     237	   1172768 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     236	   1008951 ns/op	       0 B/op	       0 allocs/op
+PASS
+
+Public evaluator, warmed single-height requests (preliminary scan rows omitted; final scan measurements follow)
+
+./evaluator.test -test.run '^$' -test.bench '^BenchmarkEvaluator(Parallel|Scan)?$' -test.benchtime=200ms -test.count=3 -test.cpu=1,8 -test.benchmem
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkEvaluator/10000/direct           	 1849138	       130.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/direct           	 1832383	       130.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/direct           	 1840388	       130.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/direct-8         	 1937365	       124.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/direct-8         	 1930884	       123.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/direct-8         	 1953110	       122.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/zero             	 1857824	       128.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/zero             	 1862394	       129.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/zero             	 1848657	       129.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/zero-8           	 1867254	       129.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/zero-8           	 1854919	       129.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/zero-8           	 1869882	       128.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/disabled         	 1862708	       128.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/disabled         	 1875691	       128.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/disabled         	 1874409	       128.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/disabled-8       	 1865239	       128.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/disabled-8       	 1860625	       129.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/disabled-8       	 1858908	       130.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/cached           	 1950729	       122.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/cached           	 1964486	       123.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/cached           	 1945174	       123.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/cached-8         	 1959867	       125.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/cached-8         	 1955864	       122.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/10000/cached-8         	 1956925	       122.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/direct          	     252	    970597 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/direct          	     237	   1004825 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/direct          	     238	   1000453 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/direct-8        	     249	    964586 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/direct-8        	     256	    933300 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/direct-8        	     256	    947751 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/zero            	     249	    958329 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/zero            	     249	    956718 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/zero            	     250	    956766 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/zero-8          	     248	    961203 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/zero-8          	     250	    960432 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/zero-8          	     249	    963147 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/disabled        	     249	    970722 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/disabled        	     243	    986551 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/disabled        	     242	    988334 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/disabled-8      	     249	    957701 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/disabled-8      	     249	    978029 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/disabled-8      	     244	    969476 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/cached          	 3304006	        75.27 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/cached          	 3128700	        77.05 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/cached          	 3065596	        78.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/cached-8        	 3333150	        72.41 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/cached-8        	 3285440	        73.37 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluator/500000/cached-8        	 3225612	        74.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/direct   	 1933015	       128.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/direct   	 1858303	       123.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/direct   	 1954887	       123.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/direct-8 	11879976	        19.99 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/direct-8 	11806713	        20.47 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/direct-8 	10220534	        20.50 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/zero     	 1875708	       126.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/zero     	 1891356	       126.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/zero     	 1891285	       127.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/zero-8   	11794286	        21.28 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/zero-8   	11201570	        21.68 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/zero-8   	10599981	        21.91 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/disabled           	 1791037	       131.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/disabled           	 1817606	       131.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/disabled           	 1830914	       131.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/disabled-8         	 9745640	        21.50 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/disabled-8         	11370916	        21.65 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/disabled-8         	11354800	        21.94 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/cached             	 1971868	       120.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/cached             	 1985252	       120.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/cached             	 1985211	       120.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/cached-8           	12442699	        20.53 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/cached-8           	11046769	        21.18 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/10000/cached-8           	11719796	        21.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/direct            	     254	    951071 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/direct            	     242	    992266 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/direct            	     238	    990879 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/direct-8          	    1371	    172338 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/direct-8          	    1408	    175533 ns/op	       1 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/direct-8          	    1390	    177425 ns/op	       2 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/zero              	     254	    937136 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/zero              	     256	    932087 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/zero              	     256	   1202364 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/zero-8            	    1261	    173728 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/zero-8            	    1429	    176964 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/zero-8            	    1287	    177544 ns/op	       4 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/disabled          	     253	    940070 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/disabled          	     253	    967343 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/disabled          	     236	   1004443 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/disabled-8        	    1264	    176399 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/disabled-8        	    1256	    177158 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/disabled-8        	    1297	    183487 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/cached            	 3036054	        77.42 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/cached            	 3401785	        71.81 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/cached            	 3355038	        72.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/cached-8          	 2675581	        86.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/cached-8          	 2601230	        91.78 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorParallel/500000/cached-8          	 2651942	        95.78 ns/op	       0 B/op	       0 allocs/op
+PASS
+
+Public evaluator, distinct-height scan after filling reusable nodes
+
+./evaluator.test -test.run '^$' -test.bench '^BenchmarkEvaluatorScan$' -test.benchtime=200ms -test.count=5 -test.cpu=1 -test.benchmem
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkEvaluatorScan/10000/direct         	 1929879	       127.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/10000/direct         	 1823440	       131.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/10000/direct         	 1823467	       131.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/10000/direct         	 1849752	       128.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/10000/direct         	 1934390	       123.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/10000/cached         	 1946268	       125.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/10000/cached         	 1945330	       123.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/10000/cached         	 1956938	       122.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/10000/cached         	 1954954	       122.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/10000/cached         	 1956868	       122.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/500000/direct        	     256	    932441 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/500000/direct        	     256	    931439 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/500000/direct        	     256	    933820 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/500000/direct        	     255	    935369 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/500000/direct        	     256	    930646 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorScan/500000/cached        	     256	    934598 ns/op	     256 B/op	       2 allocs/op
+BenchmarkEvaluatorScan/500000/cached        	     255	    942582 ns/op	     256 B/op	       2 allocs/op
+BenchmarkEvaluatorScan/500000/cached        	     252	    940469 ns/op	     256 B/op	       2 allocs/op
+BenchmarkEvaluatorScan/500000/cached        	     254	    938918 ns/op	     256 B/op	       2 allocs/op
+BenchmarkEvaluatorScan/500000/cached        	     255	    938140 ns/op	     256 B/op	       2 allocs/op
+PASS
+
+Public evaluator, 1024 retained entries
+
+COESA_PROFILE_DIR=<output> ./evaluator.test -test.run '^TestProfileEvaluatorRetained$' -test.memprofilerate=1; pprof -top -nodefraction=0 -inuse_space -focus='solutionCache|[Nn]ewEvaluator' evaluator.test evaluator-retained.pprof
+
+File: evaluator.test
+Build ID: c8b0bf72defb3f59e39db2ea637add3c57269033
+Type: inuse_space
+Time: 2026-11-04 01:18:13 CET
+Active filters:
+   focus=solutionCache|[Nn]ewEvaluator
+Showing nodes accounting for 196.62kB, 78.85% of 249.34kB total
+      flat  flat%   sum%        cum   cum%
+  196.08kB 78.64% 78.64%   196.08kB 78.64%  github.com/augiraud/coesa/pkg/coesa.(*solutionCache).store
+    0.23kB 0.094% 78.73%   196.31kB 78.73%  github.com/augiraud/coesa/pkg/coesa.(*solutionCache).load
+    0.19kB 0.075% 78.81%     0.19kB 0.075%  testing.(*common).Helper
+    0.12kB 0.047% 78.85%     0.12kB 0.047%  github.com/augiraud/coesa/pkg/coesa.NewEvaluator
+         0     0% 78.85%   196.31kB 78.73%  github.com/augiraud/coesa/pkg/coesa.(*Evaluator).At
+         0     0% 78.85%   196.62kB 78.85%  github.com/augiraud/coesa/pkg/coesa_test.TestProfileEvaluatorRetained
+         0     0% 78.85%     0.30kB  0.12%  github.com/augiraud/coesa/pkg/coesa_test.newEvaluator
+         0     0% 78.85%   196.62kB 78.85%  testing.tRunner

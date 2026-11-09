@@ -1,0 +1,302 @@
+Environment
+
+2026-11-04; Linux amd64; Intel Core i7-12700H; Go 1.27.3-X:nodwarf5.
+Recorded during pre-release development; the baseline is the implementation before the allocation fix.
+The package then lived at github.com/augiraud/coesa/pkg/coesa, as shown in the raw pkg: lines.
+CPU and allocation profiles were collected separately.
+
+Baseline: BenchmarkAt, 300 ms, five repetitions, GOMAXPROCS=1
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkAt/10000         	 1898090	       187.0 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/10000         	 1921304	       182.6 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/10000         	 2104065	       175.1 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/10000         	 2015034	       178.3 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/10000         	 2005332	       177.8 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/100000        	    2496	    133666 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/100000        	    2587	    138403 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/100000        	    2619	    138393 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/100000        	    2714	    135229 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/100000        	    2626	    138891 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/500000        	     349	   1006322 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/500000        	     364	    992845 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/500000        	     357	    995776 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/500000        	     356	    997186 ns/op	     176 B/op	       1 allocs/op
+BenchmarkAt/500000        	     355	   1012111 ns/op	     176 B/op	       1 allocs/op
+PASS
+
+After allocation fix: BenchmarkAt, 300 ms, five repetitions, GOMAXPROCS=1
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkAt/10000         	 2726526	       133.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 2894610	       127.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 2883619	       123.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 2890926	       125.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 2928390	       122.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    2630	    138163 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    2622	    139735 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    2492	    138098 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    2572	    139031 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    2397	    138693 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     356	   1015953 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     355	   1030475 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     346	   1033183 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     360	    986179 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     364	    986248 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/augiraud/coesa/pkg/coesa	5.380s
+
+Layer evaluations: 200 ms, three repetitions, GOMAXPROCS=1
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkAt/10000         	 1905973	       126.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 1885712	       125.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/10000         	 1928412	       129.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1695	    135414 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1750	    138859 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/100000        	    1789	    137487 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     243	    976762 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     244	    975371 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAt/500000        	     243	    984897 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/0         	 3488377	        69.63 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/0         	 3544738	        68.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/0         	 3533305	        67.59 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/80000     	  855793	       267.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/80000     	  865878	       269.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/80000     	  896162	       270.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/86000     	 2038318	       118.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/86000     	 2034343	       119.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/86000     	 1994179	       120.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/110000    	    1042	    231454 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/110000    	    1022	    237628 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/110000    	     988	    241723 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/149999    	     374	    640507 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/149999    	     342	    662835 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/149999    	     364	    648038 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/150000    	     228	   1044146 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/150000    	     225	   1029049 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/150000    	     247	    975450 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/200000    	     247	    979586 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/200000    	     246	    970942 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/200000    	     244	    997165 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/1000000   	     164	   1458195 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/1000000   	     165	   1443190 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAtmosphereLayers/1000000   	     165	   1441364 ns/op	       0 B/op	       0 allocs/op
+PASS
+
+Cache workloads: 200 ms, three repetitions, GOMAXPROCS=1 and 8
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkCacheReuse/10000/direct/serial           	 1850882	       128.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/serial           	 1871080	       128.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/serial           	 1893012	       126.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/serial-8         	 1842824	       128.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/serial-8         	 1761420	       135.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/serial-8         	 1788990	       131.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/serial          	 7766724	        30.62 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/serial          	 7651576	        30.71 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/serial          	 7797117	        30.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/serial-8        	 8222107	        30.81 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/serial-8        	 7154127	        31.78 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/serial-8        	 7822029	        31.91 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/serial        	12284312	        19.56 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/serial        	12378808	        19.18 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/serial        	13454061	        18.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/serial-8      	11342361	        18.27 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/serial-8      	13126269	        18.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/serial-8      	13325776	        18.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/parallel         	 1864171	       129.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/parallel         	 1827852	       126.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/parallel         	 1872399	       127.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/parallel-8       	11511588	        21.62 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/parallel-8       	10757923	        22.29 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/direct/parallel-8       	10583019	        21.92 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/parallel        	 8159770	        28.74 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/parallel        	 8614689	        28.57 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/parallel        	 7257064	        28.72 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/parallel-8      	 3191778	        74.59 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/parallel-8      	 3056046	        72.30 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/bounded/parallel-8      	 3198951	        73.33 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/parallel      	22830452	        10.32 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/parallel      	24357806	        10.01 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/parallel      	24424002	        10.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/parallel-8    	132062541	         1.974 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/parallel-8    	124588418	         1.931 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/10000/preloaded/parallel-8    	100000000	         2.031 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/serial          	     220	   1076057 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/serial          	     225	   1029140 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/serial          	     240	    987717 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/serial-8        	     243	    982444 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/serial-8        	     235	    998739 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/serial-8        	     243	    987144 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/serial         	 7953896	        32.49 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/serial         	 7352536	        30.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/serial         	 7720474	        31.28 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/serial-8       	 7893649	        30.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/serial-8       	 8193993	        30.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/serial-8       	 8070604	        30.28 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/serial       	13206436	        18.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/serial       	13184796	        18.29 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/serial       	13088042	        18.35 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/serial-8     	13774664	        19.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/serial-8     	13616718	        19.27 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/serial-8     	13202683	        18.79 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/parallel        	     240	   1006804 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/parallel        	     238	   1006556 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/parallel        	     237	   1035793 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/parallel-8      	    1309	    186706 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/parallel-8      	    1158	    192084 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/direct/parallel-8      	    1354	    196258 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/parallel       	 7688908	        28.59 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/parallel       	 8361955	        29.08 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/parallel       	 8306328	        29.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/parallel-8     	 3150381	        73.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/parallel-8     	 3076659	        72.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/bounded/parallel-8     	 3470978	        74.30 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/parallel     	21516704	        10.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/parallel     	23404246	        10.47 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/parallel     	25003346	        10.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/parallel-8   	129133020	         2.006 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/parallel-8   	124985305	         1.962 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheReuse/500000/preloaded/parallel-8   	125716951	         1.992 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/10000/direct                   	 1797981	       132.7 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/10000/direct                   	 1752327	       137.7 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/10000/direct                   	 1812928	       132.0 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/10000/direct-8                 	 1840681	       130.6 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/10000/direct-8                 	 1851216	       130.7 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/10000/direct-8                 	 1744482	       136.7 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/10000/bounded                  	  649204	       346.0 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/10000/bounded                  	  533502	       394.9 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/10000/bounded                  	  614524	       405.4 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/10000/bounded-8                	  585429	       361.4 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/10000/bounded-8                	  736225	       339.6 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/10000/bounded-8                	  727417	       345.4 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/500000/direct                  	     235	   1018867 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/500000/direct                  	     243	    995648 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/500000/direct                  	     232	   1021572 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/500000/direct-8                	     229	   1037191 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/500000/direct-8                	     235	   1044647 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/500000/direct-8                	     232	   1019637 ns/op	         1.000 evaluations/op	       0 B/op	       0 allocs/op
+BenchmarkCacheScan/500000/bounded                 	     223	   1079709 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/500000/bounded                 	     219	   1087690 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/500000/bounded                 	     220	   1086842 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/500000/bounded-8               	     219	   1081879 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/500000/bounded-8               	     229	   1043117 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheScan/500000/bounded-8               	     235	   1044307 ns/op	         1.000 evaluations/op	     368 B/op	       4 allocs/op
+BenchmarkCacheFill                                	     654	    331782 ns/op	      1024 entries/op	  414116 B/op	    4105 allocs/op
+BenchmarkCacheFill                                	     660	    374011 ns/op	      1024 entries/op	  414112 B/op	    4105 allocs/op
+BenchmarkCacheFill                                	     651	    368235 ns/op	      1024 entries/op	  414112 B/op	    4105 allocs/op
+BenchmarkCacheFill-8                              	     705	    335527 ns/op	      1024 entries/op	  414116 B/op	    4105 allocs/op
+BenchmarkCacheFill-8                              	     745	    327714 ns/op	      1024 entries/op	  414116 B/op	    4105 allocs/op
+BenchmarkCacheFill-8                              	     732	    322912 ns/op	      1024 entries/op	  414115 B/op	    4105 allocs/op
+PASS
+
+Optimized CPU profile, lower atmosphere
+
+File: coesa.test
+Build ID: 1e0d23ecdbcefb70c7efa7639de5722b5680b62c
+Type: cpu
+Time: 2026-11-04 00:26:20 CET
+Duration: 3.70s, Total samples = 3.69s (99.71%)
+Showing nodes accounting for 3.58s, 97.02% of 3.69s total
+Dropped 4 nodes (cum <= 0.02s)
+Showing top 20 nodes out of 38
+      flat  flat%   sum%        cum   cum%
+     0.72s 19.51% 19.51%      0.72s 19.51%  math.archExp
+     0.43s 11.65% 31.17%      0.43s 11.65%  math.archLog
+     0.40s 10.84% 42.01%      2.04s 55.28%  github.com/augiraud/coesa/pkg/coesa.lowerAtmosphere
+     0.38s 10.30% 52.30%      3.69s   100%  github.com/augiraud/coesa/pkg/coesa.At
+     0.34s  9.21% 61.52%      0.70s 18.97%  github.com/augiraud/coesa/pkg/coesa.Units.conversions
+     0.34s  9.21% 70.73%      2.38s 64.50%  github.com/augiraud/coesa/pkg/coesa.atSI
+     0.21s  5.69% 76.42%      0.21s  5.69%  github.com/augiraud/coesa/pkg/coesa.unitScale
+     0.19s  5.15% 81.57%      1.58s 42.82%  math.pow
+     0.12s  3.25% 84.82%      0.12s  3.25%  github.com/augiraud/coesa/pkg/coesa.conversion.fromSI (inline)
+     0.09s  2.44% 87.26%      0.81s 21.95%  math.Exp (inline)
+     0.07s  1.90% 89.16%      0.07s  1.90%  math.archMin
+     0.05s  1.36% 90.51%      0.05s  1.36%  github.com/augiraud/coesa/pkg/coesa.TemperatureUnit.conversion
+     0.04s  1.08% 91.60%      0.07s  1.90%  github.com/augiraud/coesa/pkg/coesa.LengthUnit.conversion (inline)
+     0.04s  1.08% 92.68%      0.07s  1.90%  math.ldexp
+     0.03s  0.81% 93.50%      0.05s  1.36%  github.com/augiraud/coesa/pkg/coesa.DensityUnit.conversion
+     0.03s  0.81% 94.31%      0.06s  1.63%  github.com/augiraud/coesa/pkg/coesa.PressureUnit.conversion (inline)
+     0.03s  0.81% 95.12%      0.10s  2.71%  github.com/augiraud/coesa/pkg/coesa.altitudeMetres
+     0.03s  0.81% 95.93%      0.03s  0.81%  math.Float64frombits (inline)
+     0.02s  0.54% 96.48%      0.03s  0.81%  github.com/augiraud/coesa/pkg/coesa.MolarMassUnit.conversion (inline)
+     0.02s  0.54% 97.02%      0.03s  0.81%  github.com/augiraud/coesa/pkg/coesa.SpeedUnit.conversion (inline)
+
+Optimized CPU profile, upper atmosphere
+
+File: coesa.test
+Build ID: 1e0d23ecdbcefb70c7efa7639de5722b5680b62c
+Type: cpu
+Time: 2026-11-04 00:26:26 CET
+Duration: 3.55s, Total samples = 3.54s (99.77%)
+Showing nodes accounting for 3.51s, 99.15% of 3.54s total
+Dropped 4 nodes (cum <= 0.02s)
+Showing top 20 nodes out of 27
+      flat  flat%   sum%        cum   cum%
+     1.58s 44.63% 44.63%      1.58s 44.63%  math.archExp
+     0.68s 19.21% 63.84%      3.34s 94.35%  github.com/augiraud/coesa/pkg/coesa.upperDerivative
+     0.26s  7.34% 71.19%      0.36s 10.17%  math.ldexp
+     0.18s  5.08% 76.27%      0.51s 14.41%  github.com/augiraud/coesa/pkg/coesa.upperNumbers
+     0.16s  4.52% 80.79%      1.87s 52.82%  math.pow
+     0.15s  4.24% 85.03%      3.51s 99.15%  github.com/augiraud/coesa/pkg/coesa.upperStep
+     0.14s  3.95% 88.98%      0.14s  3.95%  math.archLog
+     0.09s  2.54% 91.53%      0.17s  4.80%  github.com/augiraud/coesa/pkg/coesa.verticalTransport
+     0.05s  1.41% 92.94%      0.05s  1.41%  math.IsNaN (inline)
+     0.03s  0.85% 93.79%      1.61s 45.48%  math.Exp (inline)
+     0.03s  0.85% 94.63%      0.03s  0.85%  math.Float64bits (inline)
+     0.03s  0.85% 95.48%      0.07s  1.98%  math.IsInf (inline)
+     0.03s  0.85% 96.33%      0.04s  1.13%  math.frexp
+     0.02s  0.56% 96.89%      0.02s  0.56%  github.com/augiraud/coesa/pkg/coesa.addIntegrals (inline)
+     0.02s  0.56% 97.46%      0.03s  0.85%  github.com/augiraud/coesa/pkg/coesa.eddyDiffusion
+     0.02s  0.56% 98.02%      3.54s   100%  github.com/augiraud/coesa/pkg/coesa.upperAtmosphere
+     0.02s  0.56% 98.59%      0.07s  1.98%  github.com/augiraud/coesa/pkg/coesa.upperTemperature
+     0.01s  0.28% 98.87%      0.15s  4.24%  math.Log (inline)
+     0.01s  0.28% 99.15%      1.88s 53.11%  math.Pow (inline)
+         0     0% 99.15%      3.54s   100%  github.com/augiraud/coesa/pkg/coesa.At
+
+Retained memory: live 1024-entry benchmark cache, full sampling
+
+File: coesa.test
+Build ID: 1e0d23ecdbcefb70c7efa7639de5722b5680b62c
+Type: inuse_space
+Time: 2026-11-04 00:26:31 CET
+Active filters:
+   focus=benchmarkMemo|newBenchmarkMemo
+Showing nodes accounting for 180.41kB, 77.47% of 232.88kB total
+      flat  flat%   sum%        cum   cum%
+   96.14kB 41.28% 41.28%   144.14kB 61.90%  github.com/augiraud/coesa/pkg/coesa_test.(*benchmarkMemo).atMetres
+      48kB 20.61% 61.90%       48kB 20.61%  container/list.(*List).insertValue (inline)
+   36.27kB 15.57% 77.47%    36.27kB 15.57%  github.com/augiraud/coesa/pkg/coesa_test.newBenchmarkMemo (inline)
+         0     0% 77.47%       48kB 20.61%  container/list.(*List).PushFront (inline)
+         0     0% 77.47%   180.41kB 77.47%  github.com/augiraud/coesa/pkg/coesa_test.TestProfileCacheRetained
+         0     0% 77.47%   180.41kB 77.47%  testing.tRunner
+
+Baseline compiler escape analysis
+
+pkg/coesa/units.go:248:6: result escapes to heap in Units.conversions:
+pkg/coesa/units.go:248:6:   flow: entries ← &result:
+pkg/coesa/units.go:248:6:     from result.altitude (dot) at pkg/coesa/units.go:253:23
+pkg/coesa/units.go:248:6:     from &result.altitude (address-of) at pkg/coesa/units.go:253:16
+pkg/coesa/units.go:248:6:     from struct { unit convertibleUnit; result *conversion }{...} (struct literal element) at pkg/coesa/units.go:253:3
+pkg/coesa/units.go:248:6:     from [11]struct { unit convertibleUnit; result *conversion }{...} (array literal element) at pkg/coesa/units.go:252:3
+pkg/coesa/units.go:248:6:     from entries := [11]struct { unit convertibleUnit; result *conversion }{...} (assign) at pkg/coesa/units.go:249:10
+pkg/coesa/units.go:248:6:   flow: {temp} ← entries:
+pkg/coesa/units.go:248:6:   flow: entry ← {temp}:
+pkg/coesa/units.go:248:6:     from for loop (range) at pkg/coesa/units.go:260:18
+pkg/coesa/units.go:248:6:   flow: {heap} ← entry:
+pkg/coesa/units.go:248:6:     from entry.unit (dot) at pkg/coesa/units.go:261:22
+pkg/coesa/units.go:248:6:     from entry.unit.conversion() (call parameter) at pkg/coesa/units.go:261:38
+pkg/coesa/units.go:248:6: moved to heap: result

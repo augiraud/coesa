@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          cache-dependency-path: "**/go.sum"
+
+      - run: ./scripts/setup.sh
+
+      - run: ./scripts/local_ci.sh
+
+      - name: Sonar
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
+
+      - name: Sonar (skipped)
+        if: env.SONAR_TOKEN == ''
+        run: echo "::notice::Sonar skipped. To enable it, add a SONAR_TOKEN repository secret."
+
+  test-platforms:
+    name: test (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+          - platform: darwin/amd64
+            runner: macos-15-intel
+          - platform: darwin/arm64
+            runner: macos-15
+          - platform: windows/amd64
+            runner: windows-2025
+    env:
+      CGO_ENABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          cache: false # The library has no external module dependencies
+
+      - run: go version
+      - run: go test ./...
+        env:
+          CGO_ENABLED: "0"
+      - run: go test -race ./...
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: [ci, test-platforms]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          cache-dependency-path: "**/go.sum"
+
+      - name: Publish library source release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: go tool -modfile=tools/go.mod goreleaser release --clean

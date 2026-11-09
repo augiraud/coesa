@@ -1,0 +1,43 @@
+Transport validation benchmark comparison, 2026-11-06
+
+Go 1.27.3-X:nodwarf5, Linux amd64, Intel Core i7-12700H. Recorded during pre-release development, when the package lived at github.com/augiraud/coesa/pkg/coesa (as shown in the raw pkg: lines). Before: the implementation without transport validation, with the identical BenchmarkTransport harness copied in. After: the same implementation with transport input/output validation. State construction is excluded from timing. Five 200 ms repetitions with one logical CPU.
+
+before
+
+./before.test -test.run '^$' -test.bench '^BenchmarkTransport$' -test.benchtime=200ms -test.count=5 -test.cpu=1 -test.benchmem
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkTransport/SI         	 1654659	       148.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/SI         	 1565347	       151.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/SI         	 1658779	       143.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/SI         	 1624556	       146.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/SI         	 1693692	       145.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1560153	       159.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1465329	       162.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1616145	       145.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1677484	       144.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1687741	       141.9 ns/op	       0 B/op	       0 allocs/op
+PASS
+
+after
+
+./after.test -test.run '^$' -test.bench '^BenchmarkTransport$' -test.benchtime=200ms -test.count=5 -test.cpu=1 -test.benchmem
+
+goos: linux
+goarch: amd64
+pkg: github.com/augiraud/coesa/pkg/coesa
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkTransport/SI         	 1612112	       147.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/SI         	 1669948	       143.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/SI         	 1669656	       143.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/SI         	 1652642	       144.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/SI         	 1668946	       147.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1651222	       145.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1639567	       145.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1606804	       148.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1624515	       147.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTransport/imperial   	 1622175	       149.4 ns/op	       0 B/op	       0 allocs/op
+PASS

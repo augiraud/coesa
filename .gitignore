@@ -1,0 +1,24 @@
+# Go
+/bin/
+/dist/
+/profiles/
+coverage.out
+test-report.json
+
+# Editors and tools
+.idea/
+.vscode/
+.zed/
+.fleet/
+.vs/
+.serena/
+*.sublime-workspace
+*.swp
+*~
+.#*
+\#*\#
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

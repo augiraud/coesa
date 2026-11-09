@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+go tool -modfile=tools/go.mod golangci-lint fmt --diff
+go tool -modfile=tools/go.mod golangci-lint run
