@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"log/slog"
 	"math"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/augiraud/coesa"
@@ -35,6 +38,9 @@ func getAtmosphere(t *testing.T, handler http.Handler, target string) (atmospher
 
 	if contentType := recorder.Header().Get("Content-Type"); contentType != jsonContentType {
 		t.Errorf("Content-Type = %q, want %q", contentType, jsonContentType)
+	}
+	if control := recorder.Header().Get("Cache-Control"); control != cacheControl {
+		t.Errorf("Cache-Control = %q, want %q", control, cacheControl)
 	}
 	var response atmosphereResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
@@ -126,23 +132,24 @@ func TestCoesaRejectsRequests(t *testing.T) {
 		target     string
 		wantStatus int
 		wantError  string
+		wantAllow  string
 	}{
 		{name: "missing parameter", method: http.MethodGet, target: "/v1/coesa",
 			wantStatus: http.StatusBadRequest, wantError: "missing query parameter altitude_m"},
 		{name: "empty parameter", method: http.MethodGet, target: "/v1/coesa?altitude_m=",
 			wantStatus: http.StatusBadRequest, wantError: "missing query parameter altitude_m"},
 		{name: "not a number", method: http.MethodGet, target: "/v1/coesa?altitude_m=cruise",
-			wantStatus: http.StatusBadRequest, wantError: invalidAltitudeMsg},
+			wantStatus: http.StatusBadRequest, wantError: invalidAltitudeMessage()},
 		{name: "above the model", method: http.MethodGet, target: "/v1/coesa?altitude_m=1000001",
-			wantStatus: http.StatusBadRequest, wantError: invalidAltitudeMsg},
+			wantStatus: http.StatusBadRequest, wantError: invalidAltitudeMessage()},
 		{name: "below the model", method: http.MethodGet, target: "/v1/coesa?altitude_m=-5001",
-			wantStatus: http.StatusBadRequest, wantError: invalidAltitudeMsg},
+			wantStatus: http.StatusBadRequest, wantError: invalidAltitudeMessage()},
 		{name: "NaN altitude", method: http.MethodGet, target: "/v1/coesa?altitude_m=NaN",
-			wantStatus: http.StatusBadRequest, wantError: invalidAltitudeMsg},
+			wantStatus: http.StatusBadRequest, wantError: invalidAltitudeMessage()},
 		{name: "wrong method", method: http.MethodPost, target: "/v1/coesa?altitude_m=0",
-			wantStatus: http.StatusMethodNotAllowed},
+			wantStatus: http.StatusMethodNotAllowed, wantError: methodNotAllowed, wantAllow: allowedMethods},
 		{name: "unknown path", method: http.MethodGet, target: "/v1/weather",
-			wantStatus: http.StatusNotFound},
+			wantStatus: http.StatusNotFound, wantError: unknownPath},
 	}
 
 	for _, test := range tests {
@@ -151,6 +158,11 @@ func TestCoesaRejectsRequests(t *testing.T) {
 			handler.ServeHTTP(recorder, httptest.NewRequest(test.method, test.target, nil))
 			if recorder.Code != test.wantStatus {
 				t.Fatalf("status = %d, want %d; body %s", recorder.Code, test.wantStatus, recorder.Body.String())
+			}
+			if test.wantAllow != "" {
+				if allow := recorder.Header().Get("Allow"); allow != test.wantAllow {
+					t.Errorf("Allow = %q, want %q", allow, test.wantAllow)
+				}
 			}
 			if test.wantError == "" {
 				return
@@ -185,6 +197,90 @@ func TestDefaultListenAddrFollowsPort(t *testing.T) {
 				t.Errorf("defaultListenAddr() = %q, want %q", got, test.want)
 			}
 		})
+	}
+}
+
+// TestCoesaAcceptsHead covers the second supported method, which the route pattern used to
+// provide before the method check moved into the handler to keep rejections in JSON.
+func TestCoesaAcceptsHead(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	newTestHandler(t).ServeHTTP(recorder, httptest.NewRequest(http.MethodHead, "/v1/coesa?altitude_m=0", nil))
+	if recorder.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d; body %s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+}
+
+// TestLogRecordsUseCloudLoggingFieldNames pins the record shape Cloud Logging selects on:
+// severity, message and timestamp rather than slog's level, msg and time.
+func TestLogRecordsUseCloudLoggingFieldNames(t *testing.T) {
+	tests := []struct {
+		level slog.Level
+		want  string
+	}{
+		{level: slog.LevelInfo, want: "INFO"},
+		{level: slog.LevelWarn, want: "WARNING"},
+		{level: slog.LevelError, want: "ERROR"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.want, func(t *testing.T) {
+			record := new(bytes.Buffer)
+			newLogger(record).Log(context.Background(), test.level, "careful", "status", http.StatusBadRequest)
+			assertCloudLoggingRecord(t, record, test.want)
+		})
+	}
+}
+
+// assertCloudLoggingRecord checks one emitted record for the Cloud Logging field names and for
+// the absence of the slog names they replaced.
+func assertCloudLoggingRecord(t *testing.T, record *bytes.Buffer, wantSeverity string) {
+	t.Helper()
+	var entry map[string]any
+	if err := json.Unmarshal(record.Bytes(), &entry); err != nil {
+		t.Fatalf("decoding record %q: %v", record.String(), err)
+	}
+	severity, ok := entry["severity"].(string)
+	if !ok || severity != wantSeverity {
+		t.Errorf("severity = %v, want %q in %q", entry["severity"], wantSeverity, record.String())
+	}
+	message, ok := entry["message"].(string)
+	if !ok || message != "careful" {
+		t.Errorf("message = %v, want %q in %q", entry["message"], "careful", record.String())
+	}
+	timestamp, ok := entry["timestamp"].(string)
+	if !ok || timestamp == "" {
+		t.Errorf("timestamp = %v, want a time in %q", entry["timestamp"], record.String())
+	}
+	status, ok := entry["status"].(float64)
+	if !ok || status != http.StatusBadRequest {
+		t.Errorf("status = %v, want %d in %q", entry["status"], http.StatusBadRequest, record.String())
+	}
+	for _, stale := range []string{"level", "msg", "time"} {
+		if _, found := entry[stale]; found {
+			t.Errorf("record %q still carries the slog key %q", record.String(), stale)
+		}
+	}
+}
+
+// TestLogRecordsBelowInfoAreNotWritten states the level the logger starts at, which is why a
+// rejected request is not logged at all rather than logged at debug.
+func TestLogRecordsBelowInfoAreNotWritten(t *testing.T) {
+	records := new(bytes.Buffer)
+	newLogger(records).Debug("careful")
+	if records.Len() != 0 {
+		t.Errorf("debug record %q was written, want none", records.String())
+	}
+}
+
+// TestInvalidAltitudeMessageStatesThePublishedBounds pins the metres the rejection names. The
+// message is built from coesa.AltitudeRange, so this fails when the library range changes rather
+// than letting the two drift apart.
+func TestInvalidAltitudeMessageStatesThePublishedBounds(t *testing.T) {
+	message := invalidAltitudeMessage()
+	for _, bound := range []string{"-5000", "1000000"} {
+		if !strings.Contains(message, bound) {
+			t.Errorf("invalidAltitudeMessage() = %q, want it to name %s metres", message, bound)
+		}
 	}
 }
 

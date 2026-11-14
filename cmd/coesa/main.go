@@ -1,8 +1,8 @@
 // Command coesa serves U.S. Standard Atmosphere, 1976, evaluations over HTTP.
 //
 // It exposes GET /v1/coesa?altitude_m=<metres>, which answers with the
-// geometric state at that altitude in SI units. Errors return a JSON object with
-// a single "error" field.
+// geometric state at that altitude in SI units. Every reply is a JSON object with a single
+// field: the state for a success, an "error" message for a rejection or an unknown route.
 package main
 
 import (
@@ -11,6 +11,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -23,14 +24,61 @@ import (
 )
 
 const (
-	altitudeParameter  = "altitude_m"
-	defaultListenPort  = "8080"
-	portParameter      = "PORT"
-	readHeaderTimeout  = 5 * time.Second
-	shutdownTimeout    = 5 * time.Second
-	jsonContentType    = "application/json; charset=utf-8"
-	invalidAltitudeMsg = altitudeParameter + " must be a number of metres between -5000 and 1000000"
+	altitudeParameter = "altitude_m"
+	defaultListenPort = "8080"
+	portParameter     = "PORT"
+	readHeaderTimeout = 5 * time.Second
+	shutdownTimeout   = 5 * time.Second
+	jsonContentType   = "application/json; charset=utf-8"
+	allowedMethods    = "GET, HEAD"
+	methodNotAllowed  = "method not allowed"
+	unknownPath       = "unknown path"
+	// cacheControl is safe because the standard atmosphere is fixed: one altitude always
+	// yields the same numbers.
+	cacheControl = "public, max-age=86400"
 )
+
+// invalidAltitudeMessage words the supported altitude range as the library reports it, so the
+// wording cannot drift from the bounds the evaluator enforces.
+func invalidAltitudeMessage() string {
+	minimum, maximum, err := coesa.AltitudeRange(coesa.Metre)
+	if err != nil {
+		return altitudeParameter + " must be a number of metres within the supported range"
+	}
+	return fmt.Sprintf("%s must be a number of metres between %s and %s", altitudeParameter,
+		strconv.FormatFloat(minimum, 'f', -1, 64), strconv.FormatFloat(maximum, 'f', -1, 64))
+}
+
+// newLogger writes JSON records whose field names Cloud Logging selects on.
+func newLogger(writer io.Writer) *slog.Logger {
+	options := &slog.HandlerOptions{ReplaceAttr: cloudLoggingAttributes}
+	return slog.New(slog.NewJSONHandler(writer, options))
+}
+
+// cloudLoggingAttributes renames slog's level, message and time keys onto the entry field
+// names Cloud Logging uses, spelling the warning level as its severity enum does.
+func cloudLoggingAttributes(groups []string, attribute slog.Attr) slog.Attr {
+	if len(groups) > 0 {
+		return attribute
+	}
+	switch attribute.Key {
+	case slog.LevelKey:
+		level, ok := attribute.Value.Any().(slog.Level)
+		if !ok {
+			return attribute
+		}
+		severity := level.String()
+		if severity == slog.LevelWarn.String() {
+			severity = "WARNING"
+		}
+		return slog.String("severity", severity)
+	case slog.MessageKey:
+		attribute.Key = "message"
+	case slog.TimeKey:
+		attribute.Key = "timestamp"
+	}
+	return attribute
+}
 
 // atmosphereResponse is the geometric state at one altitude in SI units
 type atmosphereResponse struct {
@@ -58,7 +106,7 @@ type requestError struct {
 func (e *requestError) Error() string { return e.message }
 
 func main() {
-	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	logger := newLogger(os.Stderr)
 	if err := run(logger); err != nil {
 		logger.Error("server stopped", "error", err)
 		os.Exit(1)
@@ -118,11 +166,34 @@ func defaultListenAddr() string {
 	return ":" + defaultListenPort
 }
 
-// newServeMux registers the HTTP routes of the service
+// newServeMux registers the HTTP routes of the service. Unknown paths and methods are answered
+// here rather than left to ServeMux, whose own replies are plain text, so that every response
+// body is JSON.
 func newServeMux(logger *slog.Logger, evaluator *coesa.Evaluator) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /v1/coesa", handleAtmosphere(logger, evaluator))
+	mux.HandleFunc("/v1/coesa", handleCoesa(logger, evaluator))
+	mux.HandleFunc("/", handleUnknownPath(logger))
 	return mux
+}
+
+// handleCoesa serves the two methods the evaluation supports and rejects the rest in JSON.
+func handleCoesa(logger *slog.Logger, evaluator *coesa.Evaluator) http.HandlerFunc {
+	evaluate := handleAtmosphere(logger, evaluator)
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			w.Header().Set("Allow", allowedMethods)
+			writeJSON(r.Context(), logger, w, http.StatusMethodNotAllowed, errorResponse{Error: methodNotAllowed})
+			return
+		}
+		evaluate(w, r)
+	}
+}
+
+// handleUnknownPath answers paths the service does not serve
+func handleUnknownPath(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(r.Context(), logger, w, http.StatusNotFound, errorResponse{Error: unknownPath})
+	}
 }
 
 // handleAtmosphere evaluates the altitude_m query parameter and replies in SI units
@@ -133,6 +204,7 @@ func handleAtmosphere(logger *slog.Logger, evaluator *coesa.Evaluator) http.Hand
 			writeError(r.Context(), logger, w, err)
 			return
 		}
+		w.Header().Set("Cache-Control", cacheControl)
 		writeJSON(r.Context(), logger, w, http.StatusOK, response)
 	}
 }
@@ -149,7 +221,7 @@ func evaluate(r *http.Request, evaluator *coesa.Evaluator) (atmosphereResponse, 
 	}
 	metres, err := strconv.ParseFloat(value, 64)
 	if err != nil {
-		return atmosphereResponse{}, &requestError{status: http.StatusBadRequest, message: invalidAltitudeMsg}
+		return atmosphereResponse{}, &requestError{status: http.StatusBadRequest, message: invalidAltitudeMessage()}
 	}
 	state, err := evaluator.At(metres, coesa.Metre, coesa.SI())
 	if err != nil {
@@ -170,14 +242,15 @@ func evaluate(r *http.Request, evaluator *coesa.Evaluator) (atmosphereResponse, 
 // evaluationError maps an evaluation failure onto a client-facing error
 func evaluationError(err error) error {
 	if errors.Is(err, coesa.ErrAltitudeOutOfRange) {
-		return &requestError{status: http.StatusBadRequest, message: invalidAltitudeMsg}
+		return &requestError{status: http.StatusBadRequest, message: invalidAltitudeMessage()}
 	}
 	return &requestError{status: http.StatusInternalServerError, message: "atmosphere evaluation failed"}
 }
 
 func writeError(ctx context.Context, logger *slog.Logger, w http.ResponseWriter, err error) {
 	if rejected, ok := errors.AsType[*requestError](err); ok {
-		logger.WarnContext(ctx, "request rejected", "status", rejected.status, "error", rejected.message)
+		// Cloud Run records the status code of every request, so a rejected request adds
+		// nothing to the logs and is not written here.
 		writeJSON(ctx, logger, w, rejected.status, errorResponse{Error: rejected.message})
 		return
 	}

@@ -153,7 +153,7 @@ Successful direct calls and warm cache hits allocate no heap memory. A cache hol
 
 ## HTTP server
 
-`cmd/coesa` serves evaluations over HTTP. `GET /v1/coesa?altitude_m=<metres>` returns the geometric state at that altitude in SI units, one unit per key. `altitude_m` is required and must lie within the supported range, otherwise the reply is `400` with a single `error` field. `-addr` (default `:8080`, or the `PORT` environment variable when it is set) selects the listen address and `-cache-entries` (default `0`) the bounded upper-atmosphere cache described above.
+`cmd/coesa` serves evaluations over HTTP. `GET /v1/coesa?altitude_m=<metres>` returns the geometric state at that altitude in SI units, one unit per key. Every reply is a JSON object with a single field: the state for a success, an `error` message for a `400`, `404` or `405`. `altitude_m` is required and must lie within the supported range. A successful reply carries `Cache-Control: public, max-age=86400`, which is safe because the standard atmosphere is fixed. `-addr` (default `:8080`, or the `PORT` environment variable when it is set) selects the listen address and `-cache-entries` (default `0`) the bounded upper-atmosphere cache described above.
 
 ```sh
 curl "http://127.0.0.1:8080/v1/coesa?altitude_m=10000"
@@ -162,7 +162,7 @@ curl "http://127.0.0.1:8080/v1/coesa?altitude_m=10000"
 
 ## Container image
 
-`Dockerfile` builds the command with cgo off and copies it into a distroless nonroot image. `scripts/build_docker.sh` produces `coesa:latest`; `docker-compose.yml` runs that image for local testing with the port published on loopback only.
+`Dockerfile` builds the command with cgo off and copies it into a distroless nonroot image. `scripts/build_docker.sh` builds for `linux/amd64`, the architecture Cloud Run runs, and tags the image `coesa:<short-commit>` as well as a local `coesa:latest`, which `docker-compose.yml` runs with the port published on loopback only. It refuses to run on a dirty working tree, so a tag always names a commit.
 
 ```sh
 ./scripts/build_docker.sh
@@ -171,7 +171,7 @@ docker compose up    # add --build after changing the source
 
 `EXPOSE 8080` documents the default `-addr` port. Overriding the flag means overriding the published ports as well.
 
-`scripts/push_docker_image_to_gcloud.sh` re-tags `coesa:latest` and pushes it to a Google Artifact Registry Docker repository. The destination comes from `.env` at the repository root, which is not tracked by git; copy `.env.template` to `.env` and set:
+`scripts/push_docker_image_to_gcloud.sh` re-tags that image under the same commit tag and pushes it to a Google Artifact Registry Docker repository. The destination comes from `.env` at the repository root, which is not tracked by git; copy `.env.template` to `.env` and set:
 
 | Variable | Meaning |
 | --- | --- |
@@ -180,7 +180,7 @@ docker compose up    # add --build after changing the source
 | `ARTIFACT_REGISTRY_REPOSITORY` | Name of the Artifact Registry repository of type Docker |
 | `CLOUD_RUN_SERVICE_ACCOUNT` | Name of the service account the service runs as, which needs no roles |
 
-The pushed reference is `<GOOGLE_CLOUD_REGION>-docker.pkg.dev/<GOOGLE_CLOUD_PROJECT>/<ARTIFACT_REGISTRY_REPOSITORY>/coesa:latest`. Docker must already be authenticated to that endpoint, for example with `gcloud auth configure-docker <GOOGLE_CLOUD_REGION>-docker.pkg.dev`.
+The pushed reference is `<GOOGLE_CLOUD_REGION>-docker.pkg.dev/<GOOGLE_CLOUD_PROJECT>/<ARTIFACT_REGISTRY_REPOSITORY>/coesa:<short-commit>`. Docker must already be authenticated to that endpoint, for example with `gcloud auth configure-docker <GOOGLE_CLOUD_REGION>-docker.pkg.dev`.
 
 `scripts/deploy_cloud_run.sh` deploys that image to Cloud Run as a first-generation service sized for a demonstration: 0.08 vCPU, 256 MiB, concurrency 1, scaling between zero and one instance, a 30 second request timeout, and unauthenticated invocation. It reads its destination and runtime identity from the variables above, and assembles the image reference the same way the push script does. The image must be in the repository before deploying, and `gcloud` must be authenticated for the project. Scale-to-zero means an idle service accrues no instance charges, so raising the minimum instances is what makes a service like this cost money continuously.
 
