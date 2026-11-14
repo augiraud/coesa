@@ -272,6 +272,37 @@ func TestLogRecordsBelowInfoAreNotWritten(t *testing.T) {
 	}
 }
 
+// TestEvaluationFailureIsLoggedButNotShown pins the 500 path, which valid HTTP input cannot
+// reach today: the cause must reach the logs, and the client must see only a generic message.
+func TestEvaluationFailureIsLoggedButNotShown(t *testing.T) {
+	cause := coesa.ErrInvalidUnit
+	records := new(bytes.Buffer)
+	recorder := httptest.NewRecorder()
+	writeError(context.Background(), newLogger(records), recorder, evaluationError(cause))
+
+	if recorder.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, want %d", recorder.Code, http.StatusInternalServerError)
+	}
+	var body errorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decoding body %q: %v", recorder.Body.String(), err)
+	}
+	if body.Error != "internal error" {
+		t.Errorf("error = %q, want %q", body.Error, "internal error")
+	}
+
+	var entry map[string]any
+	if err := json.Unmarshal(records.Bytes(), &entry); err != nil {
+		t.Fatalf("decoding log record %q: %v", records.String(), err)
+	}
+	if entry["severity"] != "ERROR" {
+		t.Errorf("severity = %v, want ERROR in %q", entry["severity"], records.String())
+	}
+	if logged, _ := entry["error"].(string); !strings.Contains(logged, cause.Error()) {
+		t.Errorf("logged error = %q, want it to contain the cause %q", logged, cause.Error())
+	}
+}
+
 // TestInvalidAltitudeMessageStatesThePublishedBounds pins the metres the rejection names. The
 // message is built from coesa.AltitudeRange, so this fails when the library range changes rather
 // than letting the two drift apart.

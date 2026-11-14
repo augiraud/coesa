@@ -1,8 +1,8 @@
 // Command coesa serves U.S. Standard Atmosphere, 1976, evaluations over HTTP.
 //
 // It exposes GET /v1/coesa?altitude_m=<metres>, which answers with the
-// geometric state at that altitude in SI units. Every reply is a JSON object with a single
-// field: the state for a success, an "error" message for a rejection or an unknown route.
+// geometric state at that altitude in SI units. Every reply is a JSON object: the state for a
+// success, and a single "error" field for a rejection, an unknown route or a server failure.
 package main
 
 import (
@@ -33,9 +33,9 @@ const (
 	allowedMethods    = "GET, HEAD"
 	methodNotAllowed  = "method not allowed"
 	unknownPath       = "unknown path"
-	// cacheControl is safe because the standard atmosphere is fixed: one altitude always
-	// yields the same numbers.
-	cacheControl = "public, max-age=86400"
+	// cacheControl lets clients reuse an answer, since one altitude always yields the same
+	// numbers. It stays short so that a fix to the implementation reaches them within the hour.
+	cacheControl = "public, max-age=3600"
 )
 
 // invalidAltitudeMessage words the supported altitude range as the library reports it, so the
@@ -239,14 +239,17 @@ func evaluate(r *http.Request, evaluator *coesa.Evaluator) (atmosphereResponse, 
 	}, nil
 }
 
-// evaluationError maps an evaluation failure onto a client-facing error
+// evaluationError maps an out-of-range altitude onto a client-facing rejection. Any other
+// failure is the server's fault, so it is returned wrapped for writeError to log as a 500.
 func evaluationError(err error) error {
 	if errors.Is(err, coesa.ErrAltitudeOutOfRange) {
 		return &requestError{status: http.StatusBadRequest, message: invalidAltitudeMessage()}
 	}
-	return &requestError{status: http.StatusInternalServerError, message: "atmosphere evaluation failed"}
+	return fmt.Errorf("evaluating atmosphere: %w", err)
 }
 
+// writeError replies with a rejection's own status and message. Any other error is logged
+// and answered with a generic 500, so its cause reaches the logs but not the client.
 func writeError(ctx context.Context, logger *slog.Logger, w http.ResponseWriter, err error) {
 	if rejected, ok := errors.AsType[*requestError](err); ok {
 		// Cloud Run records the status code of every request, so a rejected request adds

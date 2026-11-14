@@ -153,7 +153,7 @@ Successful direct calls and warm cache hits allocate no heap memory. A cache hol
 
 ## HTTP server
 
-`cmd/coesa` serves evaluations over HTTP. `GET /v1/coesa?altitude_m=<metres>` returns the geometric state at that altitude in SI units, one unit per key. Every reply is a JSON object with a single field: the state for a success, an `error` message for a `400`, `404` or `405`. `altitude_m` is required and must lie within the supported range. A successful reply carries `Cache-Control: public, max-age=86400`, which is safe because the standard atmosphere is fixed. `-addr` (default `:8080`, or the `PORT` environment variable when it is set) selects the listen address and `-cache-entries` (default `0`) the bounded upper-atmosphere cache described above.
+`cmd/coesa` serves evaluations over HTTP. `GET /v1/coesa?altitude_m=<metres>` returns the geometric state at that altitude in SI units, one unit per key. Every reply is a JSON object: the state for a success, and a single `error` field for a `400`, `404`, `405` or `500`. `altitude_m` is required and must lie within the supported range. A successful reply carries `Cache-Control: public, max-age=3600`. The standard itself never changes, but a fix to this implementation can still take up to an hour to reach clients that cached an earlier answer. `-addr` (default `:8080`, or the `PORT` environment variable when it is set) selects the listen address and `-cache-entries` (default `0`) the bounded upper-atmosphere cache described above.
 
 ```sh
 curl "http://127.0.0.1:8080/v1/coesa?altitude_m=10000"
