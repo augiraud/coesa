@@ -2,6 +2,8 @@
 
 A Go library for the [COESA 1976 standard atmosphere](https://ntrs.nasa.gov/citations/19770009539), covering −5 to 1,000 km. Input and output units are explicit. Requires Go 1.27+ and uses only the standard library.
 
+A demonstration [HTTP server](#http-server) is deployed at <https://coesa-5o4rwykkxq-oa.a.run.app>, for example [`/v1/coesa?altitude_m=11000`](https://coesa-5o4rwykkxq-oa.a.run.app/v1/coesa?altitude_m=11000).
+
 ```sh
 go get github.com/augiraud/coesa
 ```
