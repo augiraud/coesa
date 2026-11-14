@@ -74,10 +74,10 @@ gcloud run services describe coesa \
 Prints the service URL and confirms which identity the service runs as.
 
 ```sh
-curl "<status.url>/v1/coesa?altitude_m=10000"
+./scripts/query_cloud_run.sh 10000
 ```
 
-Should answer `223.25… K` and `26499.9… Pa`, the published values for 10 km.
+Looks up the service URL and queries it. Should answer `223.25… K` and `26499.9… Pa`, the published values for 10 km. Without an argument the script queries 11,000 m.
 
 ```sh
 gcloud artifacts docker tags list \
