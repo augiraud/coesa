@@ -1,0 +1,18 @@
+# Keeping generated and editor files out of the build context stops them from
+# invalidating the source layer on every local CI run.
+.git/
+.gitignore
+.githooks/
+.github/
+.idea/
+.serena/
+.vscode/
+bin/
+dist/
+profiles/
+coverage.out
+test-report.json
+tools/
+Dockerfile
+docker-compose.yml
+.env

@@ -1,0 +1,7 @@
+# Local test run: docker compose up, then curl "http://127.0.0.1:8080/v1/coesa?altitude_m=10000"
+services:
+  coesa:
+    build: .
+    image: coesa:latest
+    ports:
+      - "127.0.0.1:8080:8080"

@@ -151,4 +151,39 @@ Representative serial benchmarks on an Intel Core i7-12700H, Linux amd64, Go 1.2
 
 Successful direct calls and warm cache hits allocate no heap memory. A cache holding 1,024 solutions retained about 196 KiB in profiling. Cache hit timings exclude construction and warmup; distinct heights still require calculation. See [benchmarks and profiling](docs/performance.md) for methodology, concurrent throughput, and miss costs.
 
+## HTTP server
+
+`cmd/coesa` serves evaluations over HTTP. `GET /v1/coesa?altitude_m=<metres>` returns the geometric state at that altitude in SI units, one unit per key. `altitude_m` is required and must lie within the supported range, otherwise the reply is `400` with a single `error` field. `-addr` (default `:8080`, or the `PORT` environment variable when it is set) selects the listen address and `-cache-entries` (default `0`) the bounded upper-atmosphere cache described above.
+
+```sh
+curl "http://127.0.0.1:8080/v1/coesa?altitude_m=10000"
+# {"altitude_m":10000,"geopotential_altitude_m":9984.293438772525,"temperature_k":223.25209264797857,"pressure_pa":26499.89813925335,"density_kg_per_m3":0.4135104288988469,"gravity_m_per_s2":9.775868442887434,"molar_mass_kg_per_mol":0.0289644,"number_density_per_m3":8.597553155222755e+24}
+```
+
+## Container image
+
+`Dockerfile` builds the command with cgo off and copies it into a distroless nonroot image. `scripts/build_docker.sh` produces `coesa:latest`; `docker-compose.yml` runs that image for local testing with the port published on loopback only.
+
+```sh
+./scripts/build_docker.sh
+docker compose up    # add --build after changing the source
+```
+
+`EXPOSE 8080` documents the default `-addr` port. Overriding the flag means overriding the published ports as well.
+
+`scripts/push_docker_image_to_gcloud.sh` re-tags `coesa:latest` and pushes it to a Google Artifact Registry Docker repository. The destination comes from `.env` at the repository root, which is not tracked by git; copy `.env.template` to `.env` and set:
+
+| Variable | Meaning |
+| --- | --- |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project id |
+| `GOOGLE_CLOUD_REGION` | Region of the repository, for example `europe-west6`. The registry endpoint is regional, not zonal. |
+| `ARTIFACT_REGISTRY_REPOSITORY` | Name of the Artifact Registry repository of type Docker |
+| `CLOUD_RUN_SERVICE_ACCOUNT` | Name of the service account the service runs as, which needs no roles |
+
+The pushed reference is `<GOOGLE_CLOUD_REGION>-docker.pkg.dev/<GOOGLE_CLOUD_PROJECT>/<ARTIFACT_REGISTRY_REPOSITORY>/coesa:latest`. Docker must already be authenticated to that endpoint, for example with `gcloud auth configure-docker <GOOGLE_CLOUD_REGION>-docker.pkg.dev`.
+
+`scripts/deploy_cloud_run.sh` deploys that image to Cloud Run as a first-generation service sized for a demonstration: 0.08 vCPU, 256 MiB, concurrency 1, scaling between zero and one instance, a 30 second request timeout, and unauthenticated invocation. It reads its destination and runtime identity from the variables above, and assembles the image reference the same way the push script does. The image must be in the repository before deploying, and `gcloud` must be authenticated for the project. Scale-to-zero means an idle service accrues no instance charges, so raising the minimum instances is what makes a service like this cost money continuously.
+
+The service runs as `<CLOUD_RUN_SERVICE_ACCOUNT>@<GOOGLE_CLOUD_PROJECT>.iam.gserviceaccount.com`, which needs no roles because the server calls no Google API. [Cloud Run setup](docs/cloud-run.md) lists the `gcloud` commands behind this: enabling the APIs, creating the repository, registering the credential helper, creating the account, and deploying.
+
 MIT license. See [LICENSE](LICENSE).

@@ -5,6 +5,9 @@
 coverage.out
 test-report.json
 
+# Local configuration
+.env
+
 # Editors and tools
 .idea/
 .vscode/
